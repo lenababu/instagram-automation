@@ -1,0 +1,25 @@
+# secrets
+.env
+*.env
+!.env.example
+token.json
+credentials.json
+client_secret*.json
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# runtime
+tmp/
+work/
+*.log
+
+# os / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

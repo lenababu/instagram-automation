@@ -1,0 +1,13 @@
+These images are frames taken at evenly spaced moments from one short vertical video (a Reel), in chronological order. Describe what is actually visible. Do not guess brand names, prices, places or people's identities unless they are clearly readable or shown. If something is unclear, say "unclear" rather than inventing it.
+
+Return ONLY a JSON object with these keys (plain strings, concise, no markdown):
+{
+  "summary": "2-3 sentences: what the video shows and what seems to happen from start to end",
+  "people": "how many people, roughly who they appear to be (e.g. 'one man speaking to camera'), what they wear if notable",
+  "products": "products, objects, food, tools, vehicles or screens that are clearly shown",
+  "actions": "what the people or camera are doing",
+  "setting": "indoor/outdoor, type of place, lighting, time of day if obvious",
+  "text_on_screen": "any readable captions, titles, signs or logos, verbatim; otherwise 'none'",
+  "mood": "tone and visual style (e.g. 'casual talking-head', 'polished product demo', 'energetic montage')",
+  "purpose": "best guess of why this video was made (educate, entertain, promote a product/service, show behind the scenes, testimonial, etc.)"
+}
