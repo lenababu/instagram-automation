@@ -54,7 +54,15 @@ def run_checks(settings) -> int:
     google = ("google_client_id", "google_client_secret", "google_refresh_token")
     step("google drive", _drive, google + ("drive_video_folder_id", "drive_thumbnail_folder_id"))
     step("google sheets", lambda: f"{len(SheetsService(settings).all_records())} rows", google + ("sheets_id",))
-    step("groq", lambda: f"{len(Groq(api_key=settings.groq_api_key).models.list().data)} models visible", ("groq_api_key",))
+    def _groq():
+        ids = {m.id for m in Groq(api_key=settings.groq_api_key).models.list().data}
+        wanted = (settings.groq_whisper_model, settings.groq_vision_model, settings.groq_text_model)
+        missing = [m for m in wanted if m not in ids]
+        if missing:
+            raise RuntimeError(f"configured models not available: {missing}; available: {sorted(ids)}")
+        return f"{len(ids)} models visible; whisper/vision/text models all available"
+
+    step("groq", _groq, ("groq_api_key",))
     step("cloudinary", lambda: (MediaHosting(settings), cloudinary.api.ping())[1],
          ("cloudinary_cloud_name", "cloudinary_api_key", "cloudinary_api_secret"))
     step("instagram token", lambda: InstagramPublisher(settings).verify_token(), ("meta_access_token", "instagram_user_id"))
