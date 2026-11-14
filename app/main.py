@@ -27,8 +27,13 @@ def run_checks(settings) -> int:
 
     ok = True
 
-    def step(name, fn):
+    def step(name, fn, needs: tuple[str, ...] = ()):
         nonlocal ok
+        missing = [n for n in needs if not getattr(settings, n)]
+        if missing:
+            ok = False
+            log.error("FAIL %-22s secrets not configured: %s", name, ", ".join(m.upper() for m in missing))
+            return
         try:
             out = fn()
             log.info("OK   %-22s %s", name, out if out is not None else "")
@@ -46,11 +51,13 @@ def run_checks(settings) -> int:
         missing = [c.video.name for c in cands if not c.has_thumbnail]
         return f"{len(cands)} videos, order: {[c.video.name for c in cands[:5]]}, missing thumbs: {missing}"
 
-    step("google drive", _drive)
-    step("google sheets", lambda: f"{len(SheetsService(settings).all_records())} rows")
-    step("groq", lambda: f"{len(Groq(api_key=settings.groq_api_key).models.list().data)} models visible")
-    step("cloudinary", lambda: (MediaHosting(settings), cloudinary.api.ping())[1])
-    step("instagram token", lambda: InstagramPublisher(settings).verify_token())
+    google = ("google_client_id", "google_client_secret", "google_refresh_token")
+    step("google drive", _drive, google + ("drive_video_folder_id", "drive_thumbnail_folder_id"))
+    step("google sheets", lambda: f"{len(SheetsService(settings).all_records())} rows", google + ("sheets_id",))
+    step("groq", lambda: f"{len(Groq(api_key=settings.groq_api_key).models.list().data)} models visible", ("groq_api_key",))
+    step("cloudinary", lambda: (MediaHosting(settings), cloudinary.api.ping())[1],
+         ("cloudinary_cloud_name", "cloudinary_api_key", "cloudinary_api_secret"))
+    step("instagram token", lambda: InstagramPublisher(settings).verify_token(), ("meta_access_token", "instagram_user_id"))
     step("telegram", lambda: "enabled" if settings.telegram_enabled else "disabled (optional)")
     return 0 if ok else 1
 
@@ -62,7 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        settings = load_settings()
+        # --check reports each integration separately, so missing secrets must not abort it.
+        settings = load_settings(require_all=not args.check)
     except ConfigError as exc:
         print(f"CONFIG ERROR: {exc}", file=sys.stderr)
         return 2
