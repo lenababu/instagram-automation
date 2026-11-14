@@ -47,8 +47,8 @@ class Settings:
     groq_api_key: str = ""
     vision_api_key: str = ""
     groq_whisper_model: str = "whisper-large-v3"
-    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
-    groq_text_model: str = "llama-3.3-70b-versatile"
+    groq_vision_model: str = "qwen/qwen3.8-27b"
+    groq_text_model: str = "openai/gpt-oss-120b"
 
     # Cloudinary
     cloudinary_cloud_name: str = ""
@@ -95,8 +95,8 @@ def load_settings(require_all: bool = True) -> Settings:
         groq_api_key=_env("GROQ_API_KEY", required=require_all),
         vision_api_key=_env("VISION_API_KEY"),
         groq_whisper_model=_env("GROQ_WHISPER_MODEL", "whisper-large-v3"),
-        groq_vision_model=_env("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"),
-        groq_text_model=_env("GROQ_TEXT_MODEL", "llama-3.3-70b-versatile"),
+        groq_vision_model=_env("GROQ_VISION_MODEL", "qwen/qwen3.8-27b"),
+        groq_text_model=_env("GROQ_TEXT_MODEL", "openai/gpt-oss-120b"),
         cloudinary_cloud_name=_env("CLOUDINARY_CLOUD_NAME", required=require_all),
         cloudinary_api_key=_env("CLOUDINARY_API_KEY", required=require_all),
         cloudinary_api_secret=_env("CLOUDINARY_API_SECRET", required=require_all),

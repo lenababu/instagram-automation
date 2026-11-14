@@ -29,7 +29,7 @@ from app.sheets_service import (
     SheetsService,
     now_iso,
 )
-from app.visual_analysis import VisualAnalysis, analyse_frames
+from app.visual_analysis import MAX_IMAGES, VisualAnalysis, analyse_frames
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
             log.info("Reusing caption from interrupted run")
         else:
             transcript = _transcribe(video_path, info, work_dir, settings)
-            frames = vp.extract_frames(video_path, work_dir, info.duration, count=5)
+            frames = vp.extract_frames(video_path, work_dir, info.duration, count=MAX_IMAGES)
             visual = _analyse(frames, settings)
             previous_hooks = [r.caption.split("\n", 1)[0] for r in records.values() if r.caption]
             caption_text = generate_caption(transcript, visual, settings, previous_hooks).render()

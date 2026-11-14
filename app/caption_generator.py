@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 
-from groq import Groq, RateLimitError
+from groq import BadRequestError, Groq, RateLimitError
 
 from app.audio_transcription import QuotaExhausted, Transcript
 from app.config import Settings
@@ -81,17 +81,26 @@ def generate_caption(
 ) -> Caption:
     client = client or Groq(api_key=settings.groq_api_key)
     prompt = build_prompt(transcript, visual, settings.brand_context, previous_hooks or [])
+    kwargs: dict = dict(
+        model=settings.groq_text_model,
+        messages=[
+            {"role": "system", "content": "You write Instagram captions. Reply with JSON only."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.8,
+        max_completion_tokens=2000,  # reasoning models spend tokens thinking before the JSON
+        response_format={"type": "json_object"},
+    )
+    if "gpt-oss" in settings.groq_text_model:
+        kwargs["reasoning_effort"] = "low"
     try:
-        res = client.chat.completions.create(
-            model=settings.groq_text_model,
-            messages=[
-                {"role": "system", "content": "You write Instagram captions. Reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.8,
-            max_completion_tokens=700,
-            response_format={"type": "json_object"},
-        )
+        try:
+            res = client.chat.completions.create(**kwargs)
+        except BadRequestError:
+            # Some models reject response_format / reasoning_effort; retry plain.
+            kwargs.pop("response_format", None)
+            kwargs.pop("reasoning_effort", None)
+            res = client.chat.completions.create(**kwargs)
     except RateLimitError as exc:
         raise QuotaExhausted(f"Groq text rate limit: {exc}") from exc
     reply = res.choices[0].message.content or ""

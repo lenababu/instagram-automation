@@ -10,8 +10,8 @@ Google Drive (Videos + Thumbnails)
 GitHub Actions runner (cron 30 13 * * * UTC = 19:00 IST)
    ├─ FFmpeg: probe, extract audio, 5 frames
    ├─ Groq Whisper (whisper-large-v3): transcript + English translation
-   ├─ Groq Llama 4 Scout (vision): what is actually shown
-   ├─ Groq Llama 3.3 70B: hook, caption, CTA, 5–8 hashtags  (prompts/caption_prompt.txt)
+   ├─ Groq Qwen 3.8 27B (vision): what is actually shown
+   ├─ Groq GPT-OSS 120B: hook, caption, CTA, 5–8 hashtags  (prompts/caption_prompt.txt)
    ├─ Cloudinary (free): public HTTPS URLs for video + existing thumbnail
    ├─ Instagram Graph API: REELS container → wait FINISHED → media_publish → permalink
    ├─ Google Sheets "Instagram Posting History": status, media id, permalink, errors
@@ -127,7 +127,7 @@ console.groq.com → **API Keys → Create API Key** → copy as `GROQ_API_KEY`.
 One key covers Whisper, the vision model and the caption model. No card required.
 
 ### 6. Vision API
-Groq's `meta-llama/llama-4-scout-17b-16e-instruct` is a true multimodal model on the free tier,
+Groq's `qwen/qwen3.8-27b` is a true multimodal model on the free tier,
 so **no separate vision key is needed**. Leave `VISION_API_KEY` empty (it falls back to
 `GROQ_API_KEY`). If you ever want a different Groq vision model, set `GROQ_VISION_MODEL`.
 
@@ -235,8 +235,8 @@ From then on the 13:30 UTC schedule publishes one Reel per day. To pause, set it
 |---|---|---|
 | GitHub Actions (private repo) | 2,000 min/month | ~5–10 min/day ≈ 150–300 min/month |
 | Groq Whisper `whisper-large-v3` | ~20 req/min, 2,000 req/day, 28,800 audio-sec/day | 1–3 requests |
-| Groq Llama 4 Scout (vision) | ~30 req/min, 1,000 req/day | 1 request |
-| Groq Llama 3.3 70B | ~30 req/min, 1,000 req/day, 100k tokens/day | 1 request |
+| Groq Qwen 3.8 27B (vision) | ~30 req/min, 1,000 req/day | 1 request |
+| Groq GPT-OSS 120B | ~30 req/min, 1,000 req/day, 100k tokens/day | 1 request |
 | Cloudinary | 25 credits/month, 100 MB/video | ~0.2 credits/day, deleted after publish |
 | Google Drive/Sheets API | 20,000 / 300 requests per minute per project | <20 requests |
 | Meta Graph API | 25 content-publishing posts per 24 h per account | 1 post |

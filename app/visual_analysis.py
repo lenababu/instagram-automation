@@ -19,7 +19,7 @@ from app.config import Settings
 
 log = logging.getLogger(__name__)
 PROMPT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "prompts", "visual_analysis_prompt.txt")
-MAX_IMAGES = 5  # Groq vision models accept up to 5 images per request
+MAX_IMAGES = 3  # Groq Qwen 3.8 accepts up to 3 images per request
 
 
 @dataclass
@@ -78,7 +78,7 @@ def analyse_frames(frames: list[str], settings: Settings, client: Groq | None = 
             model=settings.groq_vision_model,
             messages=[{"role": "user", "content": content}],
             temperature=0.2,
-            max_completion_tokens=800,
+            max_completion_tokens=1500,
         )
     except RateLimitError as exc:
         raise QuotaExhausted(f"Groq vision rate limit: {exc}") from exc

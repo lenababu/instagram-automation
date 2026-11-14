@@ -37,7 +37,7 @@ def test_generate_caption_builds_structured_caption():
     text = cap.render()
     assert text.startswith("The biryani that took 6 hours")
     assert "#KeralaFood" in text and "#Biryani" in text and "#viral" in text
-    assert client.kwargs["model"] == "llama-3.3-70b-versatile"
+    assert client.kwargs["model"] == "openai/gpt-oss-120b"
     assert len(text) <= 2200
 
 
