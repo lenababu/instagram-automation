@@ -48,7 +48,8 @@ tests/                    31 unit tests (no network needed)
 2. **Select**: lists Drive videos (`.mp4`, `.mov`) in natural order, loads the sheet, and picks
    the first file ID that is not `Published`/`Skipped`. An interrupted job
    (`Processing`/`Analysed`/`Ready`) is resumed first. `Failed` rows retry up to 3 times.
-3. **Thumbnail**: `001.mp4` → `001.jpg`/`.jpeg`/`.png`. Missing → Telegram warning, Instagram
+3. **Thumbnail**: `001.mp4` → `001.jpg`/`.jpeg`/`.png`, or the same stem with a `_thumbnail`,
+   `_thumb` or `_cover` suffix (`001_thumbnail.jpg`). Missing → Telegram warning, Instagram
    auto-cover is used.
 4. **Analyse**: audio → Whisper (Malayalam, English, …) + translation; 5 frames → vision model.
    No speech → visual only. Analysis failure → safe fallback, logged.

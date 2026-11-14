@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import logging
 import os
+import re
 from dataclasses import dataclass
 
 from googleapiclient.discovery import build
@@ -129,11 +130,23 @@ def sort_naturally(files: list[DriveFile]) -> list[DriveFile]:
     return natsorted(files, key=lambda f: f.name.lower())
 
 
+_THUMB_SUFFIX = re.compile(r"[_\- ]?(thumbnail|thumb|cover)$", re.IGNORECASE)
+
+
+def thumbnail_key(name: str) -> str:
+    """Stem of a thumbnail filename with any trailing _thumbnail/_thumb/_cover removed.
+
+    01_Video_thumbnail.jpg -> "01_video";  001.jpg -> "001"
+    """
+    stem = os.path.splitext(name)[0]
+    return _THUMB_SUFFIX.sub("", stem).lower()
+
+
 def match_thumbnails(videos: list[DriveFile], thumbnails: list[DriveFile]) -> list[VideoCandidate]:
-    """Pair each video with the image whose filename stem matches (001.mp4 -> 001.jpg)."""
+    """Pair each video with the image whose stem matches (001.mp4 -> 001.jpg or 001_thumbnail.jpg)."""
     by_stem: dict[str, DriveFile] = {}
     for t in thumbnails:
-        key = t.stem.lower()
+        key = thumbnail_key(t.name)
         # Prefer jpg over png when both exist; otherwise first seen wins
         if key not in by_stem or (t.extension in {".jpg", ".jpeg"} and by_stem[key].extension == ".png"):
             by_stem[key] = t

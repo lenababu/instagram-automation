@@ -19,6 +19,29 @@ def test_thumbnail_matching_by_stem():
     assert cands[2].thumbnail.name == "003.PNG"
 
 
+def test_thumbnail_suffix_variants_match():
+    videos = [f("01_LIGENIX_CRM_ERP_One_System.mp4"), f("02_Clip.mp4"), f("03_Clip.mov"), f("001.mp4")]
+    thumbs = [
+        f("01_LIGENIX_CRM_ERP_One_System_thumbnail.jpg"),
+        f("02_Clip-Thumb.png"),
+        f("03_Clip_cover.JPG"),
+        f("001.jpg"),
+    ]
+    cands = match_thumbnails(videos, thumbs)
+    assert [c.thumbnail.name for c in cands] == [
+        "01_LIGENIX_CRM_ERP_One_System_thumbnail.jpg",
+        "02_Clip-Thumb.png",
+        "03_Clip_cover.JPG",
+        "001.jpg",
+    ]
+
+
+def test_suffix_does_not_create_false_match():
+    # "Thumbnails_Intro.mp4" must not match a thumbnail for "Intro"
+    cands = match_thumbnails([f("Intro.mp4")], [f("Thumbnails_Intro.jpg")])
+    assert cands[0].thumbnail is None
+
+
 def test_prefers_jpg_over_png():
     cands = match_thumbnails([f("001.mp4")], [f("001.png"), f("001.jpg")])
     assert cands[0].thumbnail.name == "001.jpg"
