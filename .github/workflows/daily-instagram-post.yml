@@ -2,8 +2,9 @@ name: Daily Instagram Reel
 
 on:
   schedule:
-    # 7:00 PM Asia/Kolkata (UTC+5:30) == 13:30 UTC. GitHub may start it a few minutes late.
-    - cron: "30 13 * * *"
+    # Two posts a day, Asia/Kolkata (UTC+5:30). GitHub may start each a few minutes late.
+    - cron: "30 1 * * *"    # 7:00 AM IST
+    - cron: "30 13 * * *"   # 7:00 PM IST
   workflow_dispatch:
     inputs:
       dry_run:

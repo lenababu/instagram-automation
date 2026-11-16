@@ -1,6 +1,6 @@
 # Instagram Reels Auto-Publisher (GitHub Actions, ₹0/month)
 
-Publishes one Instagram Reel every day at **7:00 PM IST** from videos in your Google Drive.
+Publishes one Instagram Reel twice a day, at **7:00 AM and 7:00 PM IST**, from videos in your Google Drive.
 Runs entirely inside **GitHub Actions**, so your laptop can be off for weeks.
 
 ```
@@ -211,7 +211,7 @@ When the dry-run caption looks right, **Run workflow** again with **dry_run = fa
 This publishes exactly one Reel (the first unposted video) and writes the `Published` row.
 Check the permalink from the log/Telegram.
 
-### 13. Enable daily 7 PM IST publishing
+### 13. Enable daily 7 AM and 7 PM IST publishing
 Settings → Secrets and variables → Actions → **Variables** → set `AUTO_PUBLISH` = `true`.
 From then on the 13:30 UTC schedule publishes one Reel per day. To pause, set it back to `false`
 (the schedule keeps running as a dry run) or disable the workflow in the Actions tab.
