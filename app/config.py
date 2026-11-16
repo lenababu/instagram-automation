@@ -68,6 +68,8 @@ class Settings:
     brand_context: str = ""
     dry_run: bool = True
     force_video: str = ""  # filename or numeric prefix to post instead of the next in order
+    caption_mode: str = "files"  # "files": use captions/<video stem>.txt (skip AI); "ai": generate with Groq
+    captions_dir: str = "captions"
     max_upload_mb: int = 95
     log_level: str = "INFO"
     work_dir: str = "work"
@@ -109,6 +111,8 @@ def load_settings(require_all: bool = True) -> Settings:
         brand_context=_env("BRAND_CONTEXT"),
         dry_run=_bool("DRY_RUN", True),
         force_video=_env("FORCE_VIDEO").strip(),
+        caption_mode=_env("CAPTION_MODE", "files").strip().lower() or "files",
+        captions_dir=_env("CAPTIONS_DIR", "captions"),
         max_upload_mb=int(_env("MAX_UPLOAD_MB", "95") or 95),
         log_level=_env("LOG_LEVEL", "INFO"),
         work_dir=_env("WORK_DIR", "work"),

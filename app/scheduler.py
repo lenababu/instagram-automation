@@ -124,6 +124,15 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
         if rec.caption and sel.resumed and previous_status in (STATUS_ANALYSED, STATUS_READY):
             caption_text = rec.caption
             log.info("Reusing caption from interrupted run")
+        elif settings.caption_mode == "files":
+            caption_text = load_caption_file(settings.captions_dir, cand.video.stem)
+            if caption_text is None:
+                raise SkipVideo(f"No caption file captions/{cand.video.stem}.txt; add one and re-run")
+            log.info("Using pre-written caption from captions/%s.txt", cand.video.stem)
+            rec.caption = caption_text
+            if not settings.dry_run:
+                rec.status = STATUS_ANALYSED
+                sheets.upsert(rec)
         else:
             transcript = _transcribe(video_path, info, work_dir, settings)
             frames = vp.extract_frames(video_path, work_dir, info.duration, count=MAX_IMAGES)
@@ -200,6 +209,19 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
 
 class SkipVideo(Exception):
     pass
+
+
+def load_caption_file(captions_dir: str, stem: str) -> str | None:
+    """Return the pre-written caption for a video stem, or None if there is no file."""
+    base = captions_dir if os.path.isabs(captions_dir) else os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), captions_dir
+    )
+    path = os.path.join(base, f"{stem}.txt")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read().strip()
+    return text[:2200] or None
 
 
 def _mark_failed(sheets: SheetsService, rec, settings: Settings, error: str) -> None:

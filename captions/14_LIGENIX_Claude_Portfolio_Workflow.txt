@@ -1,0 +1,7 @@
+No portfolio yet? Build one this weekend with Claude.
+
+Paste your skills and project notes, ask for sections and short case studies, then a one-page site structure with the HTML and CSS to start from.
+
+Comment "portfolio" for the complete prompt.
+
+#Portfolio #CareerTips #ClaudeAI #JobSearch #LIGENIX

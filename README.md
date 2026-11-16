@@ -51,10 +51,13 @@ tests/                    31 unit tests (no network needed)
 3. **Thumbnail**: `001.mp4` → `001.jpg`/`.jpeg`/`.png`, or the same stem with a `_thumbnail`,
    `_thumb` or `_cover` suffix (`001_thumbnail.jpg`). Missing → Telegram warning, Instagram
    auto-cover is used.
-4. **Analyse**: audio → Whisper (Malayalam, English, …) + translation; 5 frames → vision model.
-   No speech → visual only. Analysis failure → safe fallback, logged.
-5. **Caption**: generated from the real transcript/visuals; previous hooks are passed in so
-   they are not repeated. Rendered: hook, caption, description, CTA, hashtags.
+4. **Caption** (default `CAPTION_MODE=files`): reads `captions/<video stem>.txt` from this
+   repository and posts it as-is. No AI models are called. A video without a caption file is
+   marked `Skipped` and the run stops, so nothing unreviewed is ever posted. Edit or add a
+   caption by editing the `.txt` file on GitHub; the change applies from the next run.
+5. **AI caption** (optional, `CAPTION_MODE=ai`): audio → Whisper + translation, 3 frames →
+   vision model, then a Groq text model writes the caption from the real content. Used only
+   when the repository variable `CAPTION_MODE` is set to `ai`.
 6. **Host**: upload to Cloudinary under `ig/<drive-file-id>` (re-used if already there),
    verify the URLs answer publicly. Videos over `MAX_UPLOAD_MB` are re-encoded first.
 7. **Publish**: create REELS container (`video_url`, `caption`, `cover_url`, `share_to_feed`),

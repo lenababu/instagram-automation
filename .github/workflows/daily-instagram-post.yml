@@ -50,6 +50,8 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BRAND_CONTEXT: ${{ vars.BRAND_CONTEXT }}
+      # "files" posts captions/<video>.txt and never calls the AI models; "ai" generates captions with Groq.
+      CAPTION_MODE: ${{ vars.CAPTION_MODE || 'files' }}
       FORCE_VIDEO: ${{ github.event_name == 'workflow_dispatch' && inputs.video || '' }}
       # Scheduled runs publish for real only when the repository variable AUTO_PUBLISH is "true".
       # Manual runs follow the dry_run checkbox.

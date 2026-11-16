@@ -1,0 +1,7 @@
+Stop guessing your edits. Give Claude a plan to make.
+
+Hand it your transcript, clip list and a reference reel, and get a scene plan with timestamps, subtitles as SRT and overlay notes.
+
+Comment "editing" for the complete prompt.
+
+#VideoEditing #ContentCreator #ClaudeAI #ReelsTips #LIGENIX
