@@ -19,12 +19,13 @@ Hooks already used in previous posts (do NOT reuse these or their pattern):
 == RULES ==
 - Base everything on the transcript and visuals above. Do not invent products, features, prices, offers, locations, names or results that are not there.
 - Sound like a real person talking to followers, not like marketing copy. No "Unlock", "Elevate", "Game-changer", "Dive in", "Unleash".
-- Hook: one line, under 100 characters, specific to this video. Vary the style across posts (a question, a blunt statement, a small detail, a contrast, a quote from the video). Avoid "Ever wondered...".
-- Caption: 2 to 5 short lines or sentences. Easy to read on a phone. Line breaks are fine.
-- Description: one sentence summarising what the viewer will see.
-- Call to action: one natural line (save, comment, share, follow, visit) that fits the content. No fake urgency.
-- Emojis: at most 2 in the whole caption, only if they fit. Zero is fine.
-- Hashtags: 5 to 8, all directly relevant to the content, mixing broad and specific. No spam tags like #viral #fyp #explore.
+- Hook: one line, under 70 characters, specific to this video. Vary the style across posts (a question, a blunt statement, a small detail, a contrast, a quote from the video). Avoid "Ever wondered...".
+- Caption: 1 to 2 short sentences, under 150 characters in total. Easy to read on a phone. Keep it tight; do not list every step shown in the video.
+- Description: leave it as an empty string "" (the caption already says what the video is).
+- Call to action: one short line, under 60 characters (save, comment, share, follow). No fake urgency.
+- No em dashes (—); use a comma or a full stop instead.
+- Emojis: at most 1 in the whole caption, only if they fit. Zero is fine.
+- Hashtags: exactly 5, all directly relevant to the content, mixing broad and specific. No spam tags like #viral #fyp #explore.
 - If the video is in Malayalam, you may write the hook or one line in Malayalam, then keep the rest in English.
 - Vary structure between posts: sometimes start with the quote, sometimes with the situation, sometimes with the takeaway.
 
