@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 from app.drive_service import VideoCandidate
 from app.sheets_service import (
@@ -96,4 +97,22 @@ def select_next(
             return Selection(c, rec, resumed=False)
         if rec.status == STATUS_FAILED and rec.retry_count < MAX_RETRIES:
             return Selection(c, rec, resumed=False)
+    return None
+
+
+def published_within(records: dict[str, PostRecord], hours: float, now: datetime | None = None) -> PostRecord | None:
+    """Return a record published less than `hours` ago (to stop a second cron firing posting twice)."""
+    if hours <= 0:
+        return None
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=hours)
+    for rec in records.values():
+        if not rec.published_date:
+            continue
+        try:
+            when = datetime.strptime(rec.published_date, "%Y-%m-%d %H:%M:%S UTC").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if when >= cutoff:
+            return rec
     return None

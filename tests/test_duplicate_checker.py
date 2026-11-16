@@ -1,7 +1,9 @@
 from app.drive_service import DriveFile, VideoCandidate
 import pytest
 
-from app.duplicate_checker import select_forced, select_next
+from datetime import datetime, timezone
+
+from app.duplicate_checker import published_within, select_forced, select_next
 from app.sheets_service import (
     STATUS_FAILED,
     STATUS_PROCESSING,
@@ -90,3 +92,13 @@ def test_forced_selection_refuses_published_or_unknown():
         select_forced(cands, {"f": rec("f", STATUS_PUBLISHED, media_id="m")}, "6")
     with pytest.raises(ValueError):
         select_forced(cands, {}, "9")
+
+
+def test_published_within_detects_recent_post():
+    now = datetime(2026, 11, 16, 14, 0, tzinfo=timezone.utc)
+    r = rec("a", STATUS_PUBLISHED, media_id="m")
+    r.published_date = "2026-11-16 13:40:00 UTC"
+    assert published_within({"a": r}, 6, now) is r
+    assert published_within({"a": r}, 0, now) is None
+    r.published_date = "2026-11-16 02:00:00 UTC"
+    assert published_within({"a": r}, 6, now) is None

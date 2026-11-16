@@ -15,7 +15,7 @@ from app.audio_transcription import QuotaExhausted, Transcript, transcribe
 from app.caption_generator import generate_caption
 from app.config import Settings
 from app.drive_service import DriveService
-from app.duplicate_checker import Selection, is_already_published, select_forced, select_next
+from app.duplicate_checker import Selection, is_already_published, published_within, select_forced, select_next
 from app.instagram_publisher import InstagramError, InstagramPublisher, RateLimited, TokenExpired
 from app.media_hosting import HostingError, MediaHosting
 from app.notifications import Notifier
@@ -73,6 +73,11 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
     candidates = drive.list_candidates()
     log.info("Drive: %d videos, %d with thumbnails", len(candidates), sum(c.has_thumbnail for c in candidates))
     records = sheets.by_file_id()
+    recent = published_within(records, settings.min_post_gap_hours)
+    if recent and not settings.force_video:
+        log.info("Already published %s at %s (within %.1f h); nothing to do this slot",
+                 recent.filename, recent.published_date, settings.min_post_gap_hours)
+        return RunOutcome.NOTHING_TO_DO
     if settings.force_video:
         try:
             sel = select_forced(candidates, records, settings.force_video)
