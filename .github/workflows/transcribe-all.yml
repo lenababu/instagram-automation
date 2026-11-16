@@ -1,0 +1,35 @@
+name: Transcribe all videos (one-off helper)
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma-separated filename prefixes to limit to (e.g. 01,02). Empty = all."
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  transcribe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+      GOOGLE_DRIVE_VIDEO_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_VIDEO_FOLDER_ID }}
+      GOOGLE_DRIVE_THUMBNAIL_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_THUMBNAIL_FOLDER_ID }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      ONLY: ${{ inputs.only }}
+      LOG_LEVEL: WARNING
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+      - run: pip install -q -r requirements.txt
+      - run: python scripts/transcribe_all.py
