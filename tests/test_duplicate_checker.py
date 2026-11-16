@@ -1,5 +1,7 @@
 from app.drive_service import DriveFile, VideoCandidate
-from app.duplicate_checker import select_next
+import pytest
+
+from app.duplicate_checker import select_forced, select_next
 from app.sheets_service import (
     STATUS_FAILED,
     STATUS_PROCESSING,
@@ -72,3 +74,19 @@ def test_identity_is_file_id_not_filename():
     cands = [cand("001.mp4", "new-id")]
     records = {"old-id": PostRecord(filename="001.mp4", drive_file_id="old-id", status=STATUS_PUBLISHED, instagram_media_id="m")}
     assert select_next(cands, records).candidate.video.file_id == "new-id"
+
+
+def test_forced_selection_by_number_and_name():
+    cands = [cand("01_A.mp4", "a"), cand("06_F.mp4", "f"), cand("12_L.mp4", "l")]
+    assert select_forced(cands, {}, "6").candidate.video.file_id == "f"
+    assert select_forced(cands, {}, "06").candidate.video.file_id == "f"
+    assert select_forced(cands, {}, "12_L.mp4").candidate.video.file_id == "l"
+    assert select_forced(cands, {}, "1").record.status == "Pending"
+
+
+def test_forced_selection_refuses_published_or_unknown():
+    cands = [cand("01_A.mp4", "a"), cand("06_F.mp4", "f")]
+    with pytest.raises(ValueError):
+        select_forced(cands, {"f": rec("f", STATUS_PUBLISHED, media_id="m")}, "6")
+    with pytest.raises(ValueError):
+        select_forced(cands, {}, "9")

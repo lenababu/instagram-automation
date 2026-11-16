@@ -10,6 +10,7 @@ Rules:
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 from app.drive_service import VideoCandidate
@@ -34,6 +35,37 @@ class Selection:
 
 def is_already_published(record: PostRecord | None) -> bool:
     return bool(record and (record.status in TERMINAL_STATUSES or record.instagram_media_id))
+
+
+def select_forced(
+    candidates: list[VideoCandidate], records: dict[str, PostRecord], wanted: str
+) -> Selection:
+    """Pick one specific video by exact filename or by its numeric prefix (e.g. "6" or "06").
+
+    Raises ValueError when nothing matches or the match was already published/skipped.
+    """
+    wanted = wanted.strip().lower()
+    matches = [c for c in candidates if c.video.name.lower() == wanted]
+    if not matches and wanted.isdigit():
+        matches = [
+            c for c in candidates
+            if (m := re.match(r"\d+", c.video.name)) and int(m.group(0)) == int(wanted)
+        ]
+    if len(matches) != 1:
+        raise ValueError(f"FORCE_VIDEO={wanted!r} matched {len(matches)} videos, expected exactly 1")
+    c = matches[0]
+    rec = records.get(c.video.file_id)
+    if is_already_published(rec):
+        raise ValueError(f"{c.video.name} is already {rec.status}; refusing to post it again")
+    if rec is None:
+        rec = PostRecord(
+            filename=c.video.name,
+            drive_file_id=c.video.file_id,
+            thumbnail_file_id=c.thumbnail.file_id if c.thumbnail else "",
+            status=STATUS_PENDING,
+        )
+    log.info("Forced selection: %s", c.video.name)
+    return Selection(c, rec, resumed=rec.status in IN_FLIGHT_STATUSES)
 
 
 def select_next(

@@ -15,7 +15,7 @@ from app.audio_transcription import QuotaExhausted, Transcript, transcribe
 from app.caption_generator import generate_caption
 from app.config import Settings
 from app.drive_service import DriveService
-from app.duplicate_checker import Selection, is_already_published, select_next
+from app.duplicate_checker import Selection, is_already_published, select_forced, select_next
 from app.instagram_publisher import InstagramError, InstagramPublisher, RateLimited, TokenExpired
 from app.media_hosting import HostingError, MediaHosting
 from app.notifications import Notifier
@@ -73,7 +73,15 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
     candidates = drive.list_candidates()
     log.info("Drive: %d videos, %d with thumbnails", len(candidates), sum(c.has_thumbnail for c in candidates))
     records = sheets.by_file_id()
-    sel = select_next(candidates, records)
+    if settings.force_video:
+        try:
+            sel = select_forced(candidates, records, settings.force_video)
+        except ValueError as exc:
+            log.error("%s", exc)
+            notifier.failed(settings.force_video, str(exc))
+            return RunOutcome.FAILED
+    else:
+        sel = select_next(candidates, records)
     if sel is None:
         notifier.no_videos()
         return RunOutcome.NOTHING_TO_DO

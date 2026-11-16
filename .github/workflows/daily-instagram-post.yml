@@ -14,6 +14,10 @@ on:
         description: "Only verify credentials/connections, no processing"
         type: boolean
         default: false
+      video:
+        description: "Post this video instead of the next in order (filename or number, e.g. 6). Leave empty for normal order."
+        type: string
+        default: ""
 
 # Never let two runs publish at the same time (e.g. a late scheduled run + a manual one).
 concurrency:
@@ -46,6 +50,7 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BRAND_CONTEXT: ${{ vars.BRAND_CONTEXT }}
+      FORCE_VIDEO: ${{ github.event_name == 'workflow_dispatch' && inputs.video || '' }}
       # Scheduled runs publish for real only when the repository variable AUTO_PUBLISH is "true".
       # Manual runs follow the dry_run checkbox.
       DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run == true) || (github.event_name == 'schedule' && vars.AUTO_PUBLISH != 'true') }}
