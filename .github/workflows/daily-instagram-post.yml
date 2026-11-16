@@ -25,6 +25,10 @@ on:
         description: "Post this video instead of the next in order (filename or number, e.g. 6). Leave empty for normal order."
         type: string
         default: ""
+      scheduled:
+        description: "Set by the external scheduler (cron-job.org): behave like a scheduled run (AUTO_PUBLISH + 6h gap)"
+        type: boolean
+        default: false
 
 # Never let two runs publish at the same time (e.g. a late scheduled run + a manual one).
 concurrency:
@@ -62,9 +66,11 @@ jobs:
       FORCE_VIDEO: ${{ github.event_name == 'workflow_dispatch' && inputs.video || '' }}
       # Scheduled runs publish for real only when the repository variable AUTO_PUBLISH is "true".
       # Manual runs follow the dry_run checkbox.
-      DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run == true) || (github.event_name == 'schedule' && vars.AUTO_PUBLISH != 'true') }}
+      # A manual run with scheduled=true (external trigger) is treated exactly like a cron run.
+      IS_SCHEDULED: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scheduled == true) }}
+      DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.scheduled != true && inputs.dry_run == true) || ((github.event_name == 'schedule' || inputs.scheduled == true) && vars.AUTO_PUBLISH != 'true') }}
       # Scheduled runs: skip when something was already posted in the last 6 hours (retry crons).
-      MIN_POST_GAP_HOURS: ${{ github.event_name == 'schedule' && '6' || '0' }}
+      MIN_POST_GAP_HOURS: ${{ (github.event_name == 'schedule' || inputs.scheduled == true) && '6' || '0' }}
       LOG_LEVEL: INFO
 
     steps:
@@ -83,7 +89,7 @@ jobs:
 
       - name: Show mode
         run: |
-          echo "event=${{ github.event_name }}  DRY_RUN=$DRY_RUN  AUTO_PUBLISH=${{ vars.AUTO_PUBLISH }}"
+          echo "event=${{ github.event_name }}  scheduled=$IS_SCHEDULED  DRY_RUN=$DRY_RUN  AUTO_PUBLISH=${{ vars.AUTO_PUBLISH }}  gap=${MIN_POST_GAP_HOURS}h"
           echo "Run started (UTC): $(date -u)"
 
       - name: Connection check only
