@@ -18,6 +18,8 @@ log = logging.getLogger("main")
 def run_checks(settings) -> int:
     """Validate every integration without downloading or publishing anything."""
     from app.drive_service import DriveService
+    from app.facebook_publisher import REQUIRED_PERMISSION as FB_PERM
+    from app.facebook_publisher import FacebookPublisher
     from app.instagram_publisher import InstagramPublisher
     from app.media_hosting import MediaHosting
     from app.sheets_service import SheetsService
@@ -66,6 +68,16 @@ def run_checks(settings) -> int:
     step("cloudinary", lambda: (MediaHosting(settings), cloudinary.api.ping())[1],
          ("cloudinary_cloud_name", "cloudinary_api_key", "cloudinary_api_secret"))
     step("instagram token", lambda: InstagramPublisher(settings).verify_token(), ("meta_access_token", "instagram_user_id"))
+    def _facebook():
+        if not settings.crosspost_facebook:
+            return "cross-posting off (set CROSSPOST_FACEBOOK=true to enable)"
+        fb = FacebookPublisher(settings)
+        if not fb.has_permission():
+            return f"NOT READY: token is missing {FB_PERM}; regenerate it with that permission ticked"
+        page_id, _ = fb.page()
+        return f"ready, page {page_id}"
+
+    step("facebook", _facebook, ("meta_access_token",))
     step("telegram", lambda: "enabled" if settings.telegram_enabled else "disabled (optional)")
     return 0 if ok else 1
 

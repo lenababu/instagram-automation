@@ -68,6 +68,8 @@ class Settings:
     brand_context: str = ""
     dry_run: bool = True
     force_video: str = ""  # filename or numeric prefix to post instead of the next in order
+    crosspost_facebook: bool = False
+    facebook_page_id: str = ""
     min_post_gap_hours: float = 0.0  # scheduled runs skip if something was published this recently
     caption_mode: str = "files"  # "files": use captions/<video stem>.txt (skip AI); "ai": generate with Groq
     captions_dir: str = "captions"
@@ -112,6 +114,8 @@ def load_settings(require_all: bool = True) -> Settings:
         brand_context=_env("BRAND_CONTEXT"),
         dry_run=_bool("DRY_RUN", True),
         force_video=_env("FORCE_VIDEO").strip(),
+        crosspost_facebook=_bool("CROSSPOST_FACEBOOK", False),
+        facebook_page_id=_env("FACEBOOK_PAGE_ID"),
         min_post_gap_hours=float(_env("MIN_POST_GAP_HOURS", "0") or 0),
         caption_mode=_env("CAPTION_MODE", "files").strip().lower() or "files",
         captions_dir=_env("CAPTIONS_DIR", "captions"),

@@ -39,6 +39,12 @@ class Notifier:
     def failed(self, filename: str, error: str) -> None:
         self.send(f"❌ Publishing failed: {filename}\n{error[:800]}")
 
+    def crossposted(self, filename: str, network: str, link: str) -> None:
+        self.send(f"🔁 Also posted to {network}: {filename}\n{link}")
+
+    def crosspost_failed(self, filename: str, network: str, error: str) -> None:
+        self.send(f"⚠️ {network} cross-post failed for {filename} (Instagram post is live).\n{error[:500]}")
+
     def missing_thumbnail(self, filename: str) -> None:
         self.send(f"⚠️ No matching thumbnail for {filename}. Posting with Instagram's auto cover.")
 

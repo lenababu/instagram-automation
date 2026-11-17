@@ -61,6 +61,9 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BRAND_CONTEXT: ${{ vars.BRAND_CONTEXT }}
+      # Cross-posting: set repo variable CROSSPOST_FACEBOOK=true once the token has pages_manage_posts.
+      CROSSPOST_FACEBOOK: ${{ vars.CROSSPOST_FACEBOOK || 'false' }}
+      FACEBOOK_PAGE_ID: ${{ vars.FACEBOOK_PAGE_ID }}
       # "files" posts captions/<video>.txt and never calls the AI models; "ai" generates captions with Groq.
       CAPTION_MODE: ${{ vars.CAPTION_MODE || 'files' }}
       FORCE_VIDEO: ${{ github.event_name == 'workflow_dispatch' && inputs.video || '' }}

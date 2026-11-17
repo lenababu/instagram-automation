@@ -15,6 +15,7 @@ from app.audio_transcription import QuotaExhausted, Transcript, transcribe
 from app.caption_generator import generate_caption
 from app.config import Settings
 from app.drive_service import DriveService
+from app.facebook_publisher import FacebookError, FacebookPublisher
 from app.duplicate_checker import Selection, is_already_published, published_within, select_forced, select_next
 from app.instagram_publisher import InstagramError, InstagramPublisher, RateLimited, TokenExpired
 from app.media_hosting import HostingError, MediaHosting
@@ -178,6 +179,9 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
         sheets.upsert(rec)
         notifier.published(cand.video.name, result.permalink, caption_text)
 
+        # 5b) Cross-post to other networks. Best effort: never fail the run over this.
+        _crosspost(settings, notifier, cand.video.name, hosted.video_url, caption_text)
+
         # 6) Free Cloudinary credits (Instagram has copied the media by now)
         hosting.delete(cand.video.file_id, cand.thumbnail.file_id if cand.thumbnail else None)
         return RunOutcome.PUBLISHED
@@ -235,6 +239,23 @@ def _mark_failed(sheets: SheetsService, rec, settings: Settings, error: str) -> 
     rec.status = STATUS_FAILED
     rec.error_message = error[:900]
     sheets.upsert(rec)
+
+
+def _crosspost(settings: Settings, notifier: Notifier, filename: str, video_url: str, caption: str) -> None:
+    """Publish the same Reel to the other networks that are switched on."""
+    if not settings.crosspost_facebook:
+        return
+    try:
+        fb = FacebookPublisher(settings)
+        post = fb.publish_reel(video_url, caption)
+        log.info("Facebook cross-post: %s", post.permalink or post.video_id)
+        notifier.crossposted(filename, "Facebook", post.permalink or post.video_id)
+    except FacebookError as exc:
+        log.warning("Facebook cross-post failed (Instagram post is unaffected): %s", exc)
+        notifier.crosspost_failed(filename, "Facebook", str(exc))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Facebook cross-post error (Instagram post is unaffected): %s", exc)
+        notifier.crosspost_failed(filename, "Facebook", f"{type(exc).__name__}: {exc}")
 
 
 def _transcribe(video_path: str, info: vp.VideoInfo, work_dir: str, settings: Settings) -> Transcript | None:
