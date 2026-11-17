@@ -1,0 +1,84 @@
+name: Post timer (exact 7 AM / 7 PM IST)
+
+# GitHub's cron is often hours late. This workflow is a relay: it waits until the next
+# 07:00 or 19:00 Asia/Kolkata, fires "Daily Instagram Reel" with scheduled=true, then
+# re-launches itself for the following slot. A job may run at most 6 h, so long waits are
+# split into hops of up to 5 h 30 min. Only one relay is allowed to be alive at a time.
+#
+# Start it once with:  gh workflow run post-timer.yml
+# The hourly cron below only restarts the chain if it ever dies; it never double-posts
+# because the posting workflow ignores a slot that already posted within 6 hours.
+
+on:
+  workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Only print the next slot and exit (no waiting, no relaunch)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 * * * *"   # chain watchdog (GitHub may run it late; that is fine)
+
+permissions:
+  actions: write
+  contents: read
+
+env:
+  POST_WORKFLOW: daily-instagram-post.yml
+  SELF_WORKFLOW: post-timer.yml
+  SLOTS_IST: "07:00 19:00"
+  MAX_HOP_SECONDS: 19800        # 5 h 30 min
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Exit if another relay is already alive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          others=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$SELF_WORKFLOW" \
+                     --status in_progress --json databaseId -q '.[].databaseId' | grep -v "^$GITHUB_RUN_ID$" || true)
+          if [ -n "$others" ]; then
+            echo "Another relay is running ($others); this one exits so only one chain stays alive."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Compute seconds until the next slot
+        if: env.SKIP != '1'
+        run: |
+          now=$(date -u +%s)
+          best=""
+          for slot in $SLOTS_IST; do
+            for day in 0 1; do
+              t=$(TZ=Asia/Kolkata date -d "$(TZ=Asia/Kolkata date -d "@$now" +%F) $slot $day day" +%s)
+              if [ "$t" -gt "$now" ] && { [ -z "$best" ] || [ "$t" -lt "$best" ]; }; then best=$t; fi
+            done
+          done
+          wait=$((best - now))
+          echo "Now: $(TZ=Asia/Kolkata date -d "@$now")  Next slot: $(TZ=Asia/Kolkata date -d "@$best")  wait=${wait}s"
+          echo "WAIT=$wait" >> "$GITHUB_ENV"
+          if [ "${{ inputs.check_only }}" = "true" ]; then echo "SKIP=1" >> "$GITHUB_ENV"; fi
+
+      - name: Wait (one hop) and fire the post at the slot
+        if: env.SKIP != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$WAIT" -gt "$MAX_HOP_SECONDS" ]; then
+            echo "Slot is more than one hop away; sleeping $MAX_HOP_SECONDS s then relaunching."
+            sleep "$MAX_HOP_SECONDS"
+          else
+            echo "Sleeping $WAIT s until the slot."
+            sleep "$WAIT"
+            echo "Firing $POST_WORKFLOW at $(TZ=Asia/Kolkata date)"
+            gh workflow run "$POST_WORKFLOW" --repo "$GITHUB_REPOSITORY" -f scheduled=true -f dry_run=false -f check_only=false
+            sleep 90   # make sure the slot is in the past before relaunching
+          fi
+
+      - name: Relaunch the relay for the next slot
+        if: always() && env.SKIP != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run "$SELF_WORKFLOW" --repo "$GITHUB_REPOSITORY"
