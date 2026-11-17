@@ -218,6 +218,17 @@ From then on the 13:30 UTC schedule publishes one Reel per day. To pause, set it
 
 ---
 
+## Exact-time posting (the "Post timer" workflow)
+
+GitHub's own cron can run hours late. `.github/workflows/post-timer.yml` is a relay that waits
+until exactly 07:00 / 19:00 IST, fires the posting workflow with `scheduled=true`, and relaunches
+itself. It runs continuously, which is free on a public repository (unlimited Actions minutes).
+
+- Start: `gh workflow run post-timer.yml`
+- Stop: `gh workflow disable post-timer.yml` (cancelling a run just relaunches the chain)
+- The hourly cron inside it is only a watchdog that restarts a dead chain.
+- Double posts are impossible: a scheduled run exits if anything was published within 6 hours.
+
 ## Operations notes
 
 - **Scheduling delays**: GitHub may start cron jobs 5–30 minutes late under load. The job itself
