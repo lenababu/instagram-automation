@@ -227,7 +227,10 @@ itself. It runs continuously, which is free on a public repository (unlimited Ac
 - Start: `gh workflow run post-timer.yml`
 - Stop: `gh workflow disable post-timer.yml` (cancelling a run just relaunches the chain)
 - The hourly cron inside it is only a watchdog that restarts a dead chain.
-- Double posts are impossible: a scheduled run exits if anything was published within 6 hours.
+- The posting workflow has **no cron of its own**, on purpose. GitHub's scheduler ran up to
+  8 hours late, which posted at the wrong time and then blocked the real slot through the
+  duplicate guard. The timer is the only thing that decides posting times.
+- Double posts are impossible: a slot run exits if anything was published within 3 hours.
 
 ## Operations notes
 

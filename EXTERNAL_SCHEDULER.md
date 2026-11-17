@@ -1,4 +1,8 @@
-# Exact-time posting with cron-job.org (free)
+# Exact-time posting with cron-job.org (free) — OPTIONAL FALLBACK
+
+> Not needed any more. `post-timer.yml` inside this repo already fires posts at exactly
+> 07:00 and 19:00 IST. Keep this guide only as a fallback if you ever make the repository
+> private again, since the timer needs the unlimited Actions minutes a public repo gets.
 
 GitHub's own cron can start late or skip a slot. cron-job.org (free plan) calls GitHub's API at the
 exact minute instead. GitHub's cron stays enabled as a backup; the 6-hour guard stops double posts.

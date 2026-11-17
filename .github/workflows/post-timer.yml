@@ -81,4 +81,8 @@ jobs:
         if: always() && env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run "$SELF_WORKFLOW" --repo "$GITHUB_REPOSITORY"
+        run: |
+          # GitHub disables scheduled workflows after 60 days of repo inactivity; the watchdog
+          # cron in this file is the chain's only safety net, so keep it enabled.
+          gh workflow enable "$SELF_WORKFLOW" --repo "$GITHUB_REPOSITORY" || true
+          gh workflow run "$SELF_WORKFLOW" --repo "$GITHUB_REPOSITORY"

@@ -1,16 +1,9 @@
 name: Daily Instagram Reel
 
 on:
-  schedule:
-    # Two posts a day, Asia/Kolkata (UTC+5:30). GitHub's cron is often late or skips a slot,
-    # so each slot has three attempts; MIN_POST_GAP_HOURS makes the later ones no-ops once
-    # the slot has been posted.
-    - cron: "30 1 * * *"    # 7:00 AM IST
-    - cron: "50 1 * * *"    # 7:20 AM IST (retry)
-    - cron: "15 2 * * *"    # 7:45 AM IST (retry)
-    - cron: "30 13 * * *"   # 7:00 PM IST
-    - cron: "50 13 * * *"   # 7:20 PM IST (retry)
-    - cron: "15 14 * * *"   # 7:45 PM IST (retry)
+  # No cron here on purpose. GitHub's scheduler runs hours late, which posted at the
+  # wrong time and then blocked the real slot. post-timer.yml fires this workflow at
+  # exactly 07:00 / 19:00 IST instead.
   workflow_dispatch:
     inputs:
       dry_run:
@@ -26,7 +19,7 @@ on:
         type: string
         default: ""
       scheduled:
-        description: "Set by the external scheduler (cron-job.org): behave like a scheduled run (AUTO_PUBLISH + 6h gap)"
+        description: "Set by post-timer.yml: treat as a scheduled slot (obeys AUTO_PUBLISH, skips if a post went out in the last 3 h)"
         type: boolean
         default: false
 
@@ -69,11 +62,11 @@ jobs:
       FORCE_VIDEO: ${{ github.event_name == 'workflow_dispatch' && inputs.video || '' }}
       # Scheduled runs publish for real only when the repository variable AUTO_PUBLISH is "true".
       # Manual runs follow the dry_run checkbox.
-      # A manual run with scheduled=true (external trigger) is treated exactly like a cron run.
-      IS_SCHEDULED: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scheduled == true) }}
-      DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.scheduled != true && inputs.dry_run == true) || ((github.event_name == 'schedule' || inputs.scheduled == true) && vars.AUTO_PUBLISH != 'true') }}
-      # Scheduled runs: skip when something was already posted in the last 6 hours (retry crons).
-      MIN_POST_GAP_HOURS: ${{ (github.event_name == 'schedule' || inputs.scheduled == true) && '6' || '0' }}
+      # scheduled=true means post-timer.yml fired this at a real slot.
+      IS_SCHEDULED: ${{ inputs.scheduled == true }}
+      DRY_RUN: ${{ (inputs.scheduled != true && inputs.dry_run == true) || (inputs.scheduled == true && vars.AUTO_PUBLISH != 'true') }}
+      # Slot runs skip if a post went out in the last 3 h (guards against a duplicate timer relay).
+      MIN_POST_GAP_HOURS: ${{ inputs.scheduled == true && '3' || '0' }}
       LOG_LEVEL: INFO
 
     steps:
@@ -121,4 +114,6 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow enable daily-instagram-post.yml --repo "${{ github.repository }}" || true
+        run: |
+          gh workflow enable daily-instagram-post.yml --repo "${{ github.repository }}" || true
+          gh workflow enable post-timer.yml --repo "${{ github.repository }}" || true
