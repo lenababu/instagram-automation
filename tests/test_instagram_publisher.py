@@ -73,3 +73,48 @@ def test_publish_error_checks_actual_state_before_failing(monkeypatch):
     ])
     result, cid = pub.publish_reel("u", "my caption here", None, existing_container="c-old")
     assert result.media_id == "m9" and cid == "c-old"
+
+
+def test_transient_network_errors_are_retried_then_succeed(monkeypatch):
+    """A dropped connection must not fail the post; _call retries up to three times."""
+    import requests as _rq
+
+    from app import instagram_publisher as ip
+    monkeypatch.setattr(ip.time, "sleep", lambda *_: None)  # no real backoff in tests
+
+    class FlakySession:
+        def __init__(self):
+            self.attempts = 0
+
+        def request(self, method, url, params=None, data=None, timeout=None):
+            self.attempts += 1
+            if self.attempts < 3:
+                raise _rq.ConnectionError("connection reset")
+            return FakeResp({"id": "123", "username": "ligenixai"})
+
+    s = Settings(meta_access_token="tok", instagram_user_id="123", meta_api_version="v24.0")
+    sess = FlakySession()
+    pub = InstagramPublisher(s, session=sess)
+    assert pub._call("GET", "123")["username"] == "ligenixai"
+    assert sess.attempts == 3
+
+
+def test_network_error_gives_up_after_three_attempts(monkeypatch):
+    import requests as _rq
+
+    from app import instagram_publisher as ip
+    monkeypatch.setattr(ip.time, "sleep", lambda *_: None)
+
+    class DeadSession:
+        def __init__(self):
+            self.attempts = 0
+
+        def request(self, *a, **kw):
+            self.attempts += 1
+            raise _rq.ConnectionError("no route to host")
+
+    s = Settings(meta_access_token="tok", instagram_user_id="123", meta_api_version="v24.0")
+    sess = DeadSession()
+    with pytest.raises(InstagramError, match="Network error"):
+        InstagramPublisher(s, session=sess)._call("GET", "123")
+    assert sess.attempts == 3
