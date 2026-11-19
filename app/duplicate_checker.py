@@ -97,6 +97,11 @@ def select_next(
             return Selection(c, rec, resumed=False)
         if rec.status == STATUS_FAILED and rec.retry_count < MAX_RETRIES:
             return Selection(c, rec, resumed=False)
+        if rec.status in ("", STATUS_PENDING):
+            # A row can be queued up front (by hand or by the ERP) with its caption already
+            # filled in. Without this branch such a row is never picked and the whole queue
+            # silently reports "nothing left to post".
+            return Selection(c, rec, resumed=False)
     return None
 
 

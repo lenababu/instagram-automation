@@ -126,15 +126,17 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
             raise SkipVideo("Invalid video for Reels: " + ", ".join(problems))
         log.info("Video: %.1fs %dx%d %.1f MB audio=%s", info.duration, info.width, info.height, info.size_mb, info.has_audio)
 
-        # 3) Analysis (audio + visual) -> caption; reuse caption when resuming
-        if rec.caption and sel.resumed and previous_status in (STATUS_ANALYSED, STATUS_READY):
-            caption_text = rec.caption
-            log.info("Reusing caption from interrupted run")
-        elif settings.caption_mode == "files":
-            caption_text = load_caption_file(settings.captions_dir, cand.video.stem)
-            if caption_text is None:
-                raise SkipVideo(f"No caption file captions/{cand.video.stem}.txt; add one and re-run")
-            log.info("Using pre-written caption from captions/%s.txt", cand.video.stem)
+        # 3) Caption. Order of truth: the sheet row, then captions/<stem>.txt, then (only when
+        #    CAPTION_MODE=ai) a generated one. A human-written caption is never overwritten.
+        caption_text, source = resolve_caption(
+            rec, settings, cand.video.stem, sel.resumed, previous_status
+        )
+        if source == "missing":
+            raise SkipVideo(
+                f"No caption in the sheet and no captions/{cand.video.stem}.txt; add one and re-run"
+            )
+        if caption_text is not None:
+            log.info("Caption source: %s", source)
             rec.caption = caption_text
             if not settings.dry_run:
                 rec.status = STATUS_ANALYSED
@@ -218,6 +220,31 @@ def _run(settings: Settings, notifier: Notifier, work_dir: str) -> str:
 
 class SkipVideo(Exception):
     pass
+
+
+def resolve_caption(
+    rec, settings: Settings, stem: str, resumed: bool, previous_status: str
+) -> tuple[str | None, str]:
+    """Pick the caption to publish, and say where it came from.
+
+    Returns (text, source). Source is one of:
+      "interrupted" - reusing what an interrupted run already settled on
+      "sheet"       - a human-written caption already stored on the row
+      "file"        - captions/<stem>.txt
+      "missing"     - file mode, but neither source has one; caller must skip the video
+      "ai"          - text is None and the caller should generate (CAPTION_MODE=ai only)
+
+    This never rewrites a caption a person wrote; it only chooses between sources.
+    """
+    existing = (rec.caption or "").strip()
+    if existing and resumed and previous_status in (STATUS_ANALYSED, STATUS_READY):
+        return existing, "interrupted"
+    if existing:
+        return existing, "sheet"
+    if settings.caption_mode == "files":
+        text = load_caption_file(settings.captions_dir, stem)
+        return (text, "file") if text is not None else (None, "missing")
+    return None, "ai"
 
 
 def load_caption_file(captions_dir: str, stem: str) -> str | None:

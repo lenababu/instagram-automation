@@ -102,3 +102,28 @@ def test_published_within_detects_recent_post():
     assert published_within({"a": r}, 0, now) is None
     r.published_date = "2026-11-16 02:00:00 UTC"
     assert published_within({"a": r}, 6, now) is None
+
+
+def test_pending_rows_are_selected():
+    """A row queued up front with its caption must still be picked up (regression)."""
+    cands = [cand("01_A.mp4", "a"), cand("02_B.mp4", "b")]
+    records = {
+        "a": rec("a", STATUS_PUBLISHED, media_id="m1"),
+        "b": rec("b", "Pending"),
+    }
+    sel = select_next(cands, records)
+    assert sel is not None, "a Pending row must not be treated as nothing-to-do"
+    assert sel.candidate.video.file_id == "b"
+    assert not sel.resumed
+
+
+def test_blank_status_row_is_treated_as_pending():
+    cands = [cand("01_A.mp4", "a")]
+    sel = select_next(cands, {"a": rec("a", "")})
+    assert sel is not None and sel.candidate.video.file_id == "a"
+
+
+def test_every_row_pending_still_returns_the_first_unposted():
+    cands = [cand(f"{i:02d}_X.mp4", str(i)) for i in range(1, 6)]
+    records = {str(i): rec(str(i), "Pending") for i in range(1, 6)}
+    assert select_next(cands, records).candidate.video.file_id == "1"
